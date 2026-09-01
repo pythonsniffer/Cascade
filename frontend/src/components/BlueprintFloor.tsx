@@ -10,37 +10,46 @@ import type { BottleneckState, ChainAlert, Line, LineNode } from "../lib/types";
 import { stationStatus, type StationStatus } from "../store/twin";
 import { STATUS_META, StatusDot } from "./primitives";
 
-/* isometric projection */
-const TILE_W = 116;
-const TILE_H = 58;
-const ROW_GAP = 132;
-const ORIGIN = { x: 520, y: 150 };
+/* isometric projection.
+   Aisles are separated along the depth axis. DEPTH_STEP is chosen so the
+   perpendicular gap between two parallel aisles (~52px per depth unit) clears a
+   tile plus its label — below ~2.2 the aisles visibly collide. */
+const TILE_W = 104;
+const TILE_H = 52;
+const MAX_COL = 8;
+const DEPTH_STEP = 2.7;
+const ORIGIN = { x: 0, y: 0 };
 
-function iso(col: number, row: number) {
+function iso(col: number, depth: number) {
   return {
-    x: ORIGIN.x + (col - row) * (TILE_W / 2),
-    y: ORIGIN.y + (col + row) * (TILE_H / 2) + row * (ROW_GAP - TILE_H),
+    x: ORIGIN.x + (col - depth) * (TILE_W / 2),
+    y: ORIGIN.y + (col + depth) * (TILE_H / 2),
   };
 }
 
 export interface Placed extends LineNode { px: number; py: number; col: number; row: number }
 
-/** Lay the line out as one serpentine row per zone, so it reads as a floor plan. */
+/** Lay the line out as aisles: each zone takes one or more aisles of at most
+ *  MAX_COL stations, so a 35-station line reads as a compact floor plan rather
+ *  than one long diagonal. Direction alternates — the material snakes back. */
 export function layout(line: Line): Placed[] {
-  const zoneOrder = Object.keys(line.zones);
   const perZone: Record<string, LineNode[]> = {};
   for (const n of line.nodes) (perZone[n.zone] ??= []).push(n);
 
   const out: Placed[] = [];
-  zoneOrder.forEach((zone, row) => {
+  let row = 0;
+  for (const zone of Object.keys(line.zones)) {
     const nodes = (perZone[zone] ?? []).sort((a, b) => a.station_id - b.station_id);
-    nodes.forEach((n, i) => {
-      // alternate direction per row: the material physically snakes back
-      const col = row % 2 === 0 ? i : nodes.length - 1 - i;
-      const { x, y } = iso(col, row);
-      out.push({ ...n, px: x, py: y, col, row });
-    });
-  });
+    for (let start = 0; start < nodes.length; start += MAX_COL) {
+      const aisle = nodes.slice(start, start + MAX_COL);
+      aisle.forEach((n, i) => {
+        const col = row % 2 === 0 ? i : aisle.length - 1 - i;
+        const { x, y } = iso(col, row * DEPTH_STEP);
+        out.push({ ...n, px: x, py: y, col, row });
+      });
+      row += 1;
+    }
+  }
   return out.sort((a, b) => a.station_id - b.station_id);
 }
 
@@ -53,16 +62,19 @@ interface Props {
 }
 
 export function BlueprintFloor({ line, bottleneck, alerts, selected, onSelect }: Props) {
-  const [view, setView] = useState({ x: 0, y: 0, k: 0.78 });
+  const [view, setView] = useState({ x: 0, y: 0, k: 1 });
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const placed = useMemo(() => layout(line), [line]);
   const byId = useMemo(() => new Map(placed.map(p => [p.station_id, p])), [placed]);
 
   const bounds = useMemo(() => {
     const xs = placed.map(p => p.px), ys = placed.map(p => p.py);
-    return { minX: Math.min(...xs) - 140, maxX: Math.max(...xs) + 140,
-             minY: Math.min(...ys) - 130, maxY: Math.max(...ys) + 130 };
+    // asymmetric padding: room on the left for zone labels, below for the plinths
+    return { minX: Math.min(...xs) - 200, maxX: Math.max(...xs) + 120,
+             minY: Math.min(...ys) - 70, maxY: Math.max(...ys) + 90 };
   }, [placed]);
+  const cx = (bounds.minX + bounds.maxX) / 2;
+  const cy = (bounds.minY + bounds.maxY) / 2;
 
   /* stations that a chain alert points downstream from, for the trace */
   const traced = useMemo(() => {
@@ -116,32 +128,30 @@ export function BlueprintFloor({ line, bottleneck, alerts, selected, onSelect }:
           </marker>
         </defs>
 
-        <g transform={`translate(${view.x} ${view.y}) scale(${view.k})
-                       translate(${(1 - 1) * 0} 0)`}
-           style={{ transformOrigin: "center" }}>
+        {/* zoom about the drawing's own centre, so + / - keeps the line in frame
+            (an SVG transform ignores CSS transform-origin) */}
+        <g transform={`translate(${view.x} ${view.y}) translate(${cx} ${cy})
+                       scale(${view.k}) translate(${-cx} ${-cy})`}>
           <rect x={bounds.minX} y={bounds.minY} width={bounds.maxX - bounds.minX}
                 height={bounds.maxY - bounds.minY} fill="url(#grid)" opacity={0.55} />
 
-          {/* zone bands + labels */}
-          {Object.entries(line.zones).map(([zone, z], row) => {
+          {/* zone labels — one marker at the head of each zone's first aisle.
+              Bounding boxes would overlap on a diagonal layout, so the zone is
+              named at its start instead of boxed. */}
+          {Object.entries(line.zones).map(([zone, z]) => {
             const nodes = placed.filter(p => p.zone === zone);
             if (!nodes.length) return null;
-            const xs = nodes.map(n => n.px), ys = nodes.map(n => n.py);
+            const head = nodes.reduce((a, b) => (a.py <= b.py ? a : b));
             return (
-              <g key={zone}>
-                <rect
-                  x={Math.min(...xs) - 70} y={Math.min(...ys) - 46}
-                  width={Math.max(...xs) - Math.min(...xs) + 140}
-                  height={Math.max(...ys) - Math.min(...ys) + 92}
-                  rx="18" fill="#141414" opacity={row % 2 ? 0.018 : 0.032}
-                  stroke="#E2E0DC" strokeWidth="1"
-                />
-                <text
-                  x={Math.min(...xs) - 62} y={Math.min(...ys) - 54}
-                  className="font-mono" fontSize="11" fill="#8A8A8A"
-                  letterSpacing="1.6"
-                >
-                  {z.label.toUpperCase()} · S{z.start}–S{z.end}
+              <g key={zone} transform={`translate(${head.px - 96} ${head.py - 8})`}>
+                <line x1="66" y1="0" x2="86" y2="0" stroke="#C9C6C0" strokeWidth="1" />
+                <text x="60" y="-4" textAnchor="end" className="font-mono"
+                      fontSize="11" fill="#5C5A56" letterSpacing="1.4">
+                  {z.label.toUpperCase()}
+                </text>
+                <text x="60" y="9" textAnchor="end" className="font-mono"
+                      fontSize="9" fill="#A8A5A0" letterSpacing="0.8">
+                  S{z.start}–S{z.end}
                 </text>
               </g>
             );
@@ -223,7 +233,7 @@ export function BlueprintFloor({ line, bottleneck, alerts, selected, onSelect }:
       </div>
 
       <PanZoomControls onNudge={nudge} onZoom={zoom}
-                       onReset={() => setView({ x: 0, y: 0, k: 0.78 })} />
+                       onReset={() => setView({ x: 0, y: 0, k: 1 })} />
 
       <p className="pointer-events-none absolute bottom-3 right-4 max-w-[240px] text-right
                     font-mono text-[9px] leading-snug text-muted/80">

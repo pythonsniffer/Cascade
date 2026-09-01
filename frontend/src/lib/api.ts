@@ -1,9 +1,10 @@
 /** Typed REST client. Every domain value the UI shows comes through here. */
 import type {
-  ConfigPayload, DefectEvent, DetectorStatus, Health, History, Line, PnL, TwinState,
+  ConfigPayload, DefectEvent, DetectorStatus, Health, History, Line, PnL, TickMessage,
+  TwinState,
 } from "./types";
 
-const BASE = import.meta.env.VITE_API_BASE ?? "";
+const BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -29,7 +30,8 @@ export const api = {
     req<PnL>(`/pnl${key ? `?sensitivity_key=${encodeURIComponent(key)}` : ""}`),
   history: () => req<History>("/history"),
   twinStates: (limit = 50) =>
-    req<{ twin_states: TwinState[] }>(`/twin/state?limit=${limit}`),
+    req<{ twin_states: TwinState[]; last_tick: TickMessage | null }>(
+      `/twin/state?limit=${limit}`),
   twinState: (vehicleId: number) => req<TwinState>(`/twin/state/${vehicleId}`),
   alerts: (limit = 50) => req<{ alerts: TwinState["downstream_inspection_alerts"] }>(
     `/alerts?limit=${limit}`),
@@ -53,6 +55,8 @@ export const api = {
 
 export function wsUrl(): string {
   if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL as string;
-  const base = BASE || window.location.origin;
-  return base.replace(/^http/, "ws") + "/ws/live";
+  // BASE is normally a path ("/api"), so resolve it against the page origin —
+  // WebSocket needs an absolute ws:// or wss:// URL.
+  const abs = /^https?:/i.test(BASE) ? BASE : window.location.origin + BASE;
+  return abs.replace(/^http/i, "ws") + "/ws/live";
 }

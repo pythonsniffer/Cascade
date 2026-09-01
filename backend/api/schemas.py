@@ -117,6 +117,7 @@ class PnLResponse(BaseModel):
     series: list[dict] = []
     cumulative_net: float = 0.0
     cumulative_breakdown: dict = {}
+    cumulative_counts: dict = {}
     shifts_counted: int = 0
     assumptions: dict = {}
     missing_config: list[str] = []

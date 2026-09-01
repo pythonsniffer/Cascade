@@ -118,11 +118,19 @@ class PnLEngine:
         for line in LINE_SPEC:
             vals = [s["breakdown"][line] for s in series if s["breakdown"][line] is not None]
             totals[line] = round(sum(vals), 2) if vals else None
+        # Cumulative counts, so the UI can label a cumulative amount with the count that
+        # actually produced it rather than the latest shift's count.
+        cumulative_counts = {
+            f: sum(getattr(c, f) for c in all_counts)
+            for f in ("confident_bottleneck_flags", "defects_caught", "chains_flagged",
+                      "inspections_raised", "low_confidence_acted")
+        }
         return {
             "latest": latest,
             "series": series,
             "cumulative_net": cumulative,
             "cumulative_breakdown": totals,
+            "cumulative_counts": cumulative_counts,
             "shifts_counted": len(series),
             "assumptions": {k: self.settings.pnl_value(k) for k in Settings.PNL_REQUIRED},
             "missing_config": self.settings.missing_pnl_fields(),

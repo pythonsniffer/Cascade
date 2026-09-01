@@ -58,8 +58,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# The REST surface is served twice, deliberately:
+#   - at the root, exactly as Backend Instructions §9 names it (GET /pnl, /history, ...)
+#   - under /api, so the dashboard can share one origin with the SPA. Without this the
+#     SPA routes /pnl, /history and /config collide with the API paths of the same name
+#     and a page reload returns JSON instead of the app.
 app.include_router(rest_router)
+app.include_router(rest_router, prefix="/api")
 app.include_router(ws_router)
+app.include_router(ws_router, prefix="/api")
 
 
 @app.exception_handler(ConfigError)

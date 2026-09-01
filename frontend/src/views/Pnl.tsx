@@ -91,7 +91,8 @@ export function Pnl() {
                 Where the number comes from
               </SectionTitle>
               <Waterfall lines={lines} net={pnl.cumulative_net} currency={currency}
-                         sources={pnl.latest?.sources ?? {}} />
+                         sources={pnl.latest?.sources ?? {}}
+                         counts={pnl.cumulative_counts ?? {}} />
               <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
                 <span className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-sm bg-ink/70" /> count from model output
@@ -107,7 +108,7 @@ export function Pnl() {
               <SectionTitle>Projected impact over the session</SectionTitle>
               <div className="card-solid p-3" style={{ height: 240 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={pnl.series}
+                  <AreaChart data={pnl.series.map((d, i) => ({ ...d, i: i + 1 }))}
                              margin={{ top: 8, right: 8, bottom: 4, left: 4 }}>
                     <defs>
                       <linearGradient id="cum" x1="0" y1="0" x2="0" y2="1">
@@ -116,9 +117,9 @@ export function Pnl() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="#E2E0DC" vertical={false} />
-                    <XAxis dataKey="shift_id" tick={{ fontSize: 10, fill: "#8A8A8A" }}
-                           stroke="#E2E0DC" tickLine={false}
-                           label={{ value: "shift", position: "insideBottomRight",
+                    <XAxis dataKey="i" tick={{ fontSize: 10, fill: "#8A8A8A" }}
+                           stroke="#E2E0DC" tickLine={false} allowDecimals={false}
+                           label={{ value: "shifts elapsed", position: "insideBottomRight",
                                     fontSize: 9, fill: "#8A8A8A", dy: 10 }} />
                     <YAxis tick={{ fontSize: 10, fill: "#8A8A8A" }} stroke="#E2E0DC"
                            tickLine={false} width={54}
@@ -127,7 +128,8 @@ export function Pnl() {
                       contentStyle={{ borderRadius: 12, border: "1px solid #E2E0DC",
                                       fontSize: 12, fontFamily: "Inter" }}
                       formatter={(v) => [moneyExact(Number(v), currency), "Cumulative"]}
-                      labelFormatter={(l) => `Shift ${l}`} />
+                      labelFormatter={(_l, payload) =>
+                        `Shift ${payload?.[0]?.payload?.shift_id ?? "?"}`} />
                     <Area type="monotone" dataKey="cumulative" stroke="#141414" strokeWidth={1.6}
                           fill="url(#cum)" dot={false} isAnimationActive={false} />
                   </AreaChart>
@@ -144,10 +146,12 @@ export function Pnl() {
 }
 
 /* ── waterfall: credits up, debits down, net at the end ── */
-function Waterfall({ lines, net, currency, sources }: {
+function Waterfall({ lines, net, currency, sources, counts }: {
   lines: [string, number | null][];
   net: number; currency: string;
-  sources: Record<string, { status: string; count?: number; formula?: string }>;
+  sources: Record<string, { status: string; count_field?: string; formula?: string }>;
+  /** cumulative counts — the amounts shown are cumulative, so the counts must be too */
+  counts: Record<string, number>;
 }) {
   const max = useMemo(
     () => Math.max(...lines.map(([, v]) => Math.abs(v ?? 0)), Math.abs(net), 1),
@@ -164,8 +168,10 @@ function Waterfall({ lines, net, currency, sources }: {
             <div className="w-[190px] shrink-0">
               <p className="text-[12px] font-medium leading-tight">{humanise(key)}</p>
               <p className="font-mono text-[9.5px] leading-tight text-muted">
-                {missing ? "missing assumption" :
-                  src?.count !== undefined ? `${src.count} × your rate` : " "}
+                {missing ? "missing assumption"
+                  : src?.count_field
+                    ? `${counts[src.count_field] ?? 0} × your rate`
+                    : " "}
               </p>
             </div>
             <div className="relative h-5 flex-1 rounded-md bg-black/[.03]">

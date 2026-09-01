@@ -152,6 +152,7 @@ export interface PnL {
             breakdown: Record<string, number | null>; complete: boolean }[];
   cumulative_net: number;
   cumulative_breakdown: Record<string, number | null>;
+  cumulative_counts: Record<string, number>;
   shifts_counted: number;
   assumptions: Record<string, number | null>;
   missing_config: string[];

@@ -77,7 +77,7 @@ export const useTwin = create<TwinStore>((set, get) => ({
         tickCount: health.tick_count, cumulativeNet: pnl.cumulative_net,
       });
       // seed from history so a page reload doesn't look like an empty line
-      const [{ twin_states }, { detections }] = await Promise.all([
+      const [{ twin_states, last_tick }, { detections }] = await Promise.all([
         api.twinStates(MAX_TWIN), api.detections(MAX_EVENTS),
       ]);
       const seededAlerts = twin_states.flatMap(t =>
@@ -87,8 +87,16 @@ export const useTwin = create<TwinStore>((set, get) => ({
         twinStates: twin_states, detections,
         alerts: seededAlerts.slice(0, MAX_ALERTS),
       });
-      const last = twin_states[0];
-      if (last) {
+      // Prefer last_tick: it carries the per-station blk/stv arrays, so a reload
+      // shows the same station detail as a live tick instead of "no forecast yet".
+      if (last_tick) {
+        set({
+          shiftId: last_tick.shift_id, shiftName: last_tick.shift_name,
+          bottleneck: last_tick.bottleneck, lastMeta: last_tick._meta,
+          latestNet: last_tick.pnl_delta?.net ?? null,
+        });
+      } else if (twin_states[0]) {
+        const last = twin_states[0];
         set({
           shiftId: last.shift_id ?? null,
           bottleneck: {
