@@ -1,0 +1,51 @@
+{
+  "xmin": [
+    0.0,
+    0.0,
+    0.0,
+    42.74314794773011,
+    0.4,
+    80.0,
+    1.3548648041002789,
+    0.4,
+    80.0,
+    1.8123271150757265
+  ],
+  "xmax": [
+    66.11767800825214,
+    64.28533774542868,
+    63.72373142587921,
+    107.82846226143022,
+    0.6,
+    119.0,
+    19.807939967297244,
+    0.6,
+    119.0,
+    17.330831667965267
+  ],
+  "T_w": 3,
+  "CONF_THRESHOLD": 0.804446762800216,
+  "FEATURES": [
+    "blockage",
+    "starvation",
+    "downtime",
+    "cycle_time",
+    "product_mix",
+    "production_volume",
+    "seq_variability",
+    "planned_product_mix",
+    "planned_production_volume",
+    "planned_seq_variability"
+  ],
+  "TARGETS": [
+    "blockage",
+    "starvation"
+  ],
+  "train_frac": 0.8,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "epochs": 60
+}
