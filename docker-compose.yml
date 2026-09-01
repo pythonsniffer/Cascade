@@ -1,0 +1,49 @@
+# Cascade Digital Twin — one `docker compose up` starts the whole twin.
+#
+# Nothing here trains a model. The backend loads the artifacts produced offline by
+# tools/export_artifacts.py, mounted read-only (Architecture & Workflow §7 / §8).
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: cascade-backend:1.0.0
+    container_name: cascade-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      # exported model artifacts — read-only, the backend must never write here
+      - ./artifacts:/app/artifacts:ro
+      # editable config, incl. the P&L assumptions the dashboard edits live
+      - cascade-config:/app/config
+      # the SQLite database file
+      - cascade-data:/app/data
+    environment:
+      CASCADE_ARTIFACTS_DIR: /app/artifacts
+      CASCADE_CONFIG_DIR: /app/config
+      CASCADE_DATA_DIR: /app/data
+      # swap to postgresql+psycopg://... to move to the db service below
+      CASCADE_DATABASE_URL: ${CASCADE_DATABASE_URL:-sqlite:////app/data/cascade.db}
+      CASCADE_LOG_LEVEL: ${CASCADE_LOG_LEVEL:-INFO}
+      CASCADE_CORS_ORIGINS: ${CASCADE_CORS_ORIGINS:-*}
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: cascade-frontend:1.0.0
+    container_name: cascade-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  # the demo store is a SQLite file in a volume; see the postgres profile in
+  # docker-compose.postgres.yml to switch stores without touching any model code
+  cascade-data:
+  cascade-config:

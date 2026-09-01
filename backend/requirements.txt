@@ -9,3 +9,5 @@ torch>=2.2
 torch_geometric>=2.5
 ultralytics>=8.3
 python-multipart==0.0.20
+# Postgres driver — the store is SQLite by default; see docker-compose.postgres.yml
+psycopg[binary]>=3.2
