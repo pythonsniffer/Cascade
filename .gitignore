@@ -8,3 +8,4 @@ config/
 .pytest_cache/
 .DS_Store
 *.egg-info/
+artifacts/sample_frames/

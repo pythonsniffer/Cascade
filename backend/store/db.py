@@ -37,6 +37,11 @@ def get_engine():
 
 @contextmanager
 def session_scope():
-    with Session(get_engine()) as s:
+    """Commit on exit, keeping instances usable afterwards.
+
+    expire_on_commit=False matters: the read helpers in repo.py return rows to the
+    API layer, which touches their attributes after the session has closed.
+    """
+    with Session(get_engine(), expire_on_commit=False) as s:
         yield s
         s.commit()
