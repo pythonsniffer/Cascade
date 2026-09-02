@@ -71,7 +71,7 @@ the MVTec-derived dataset:
 
 | Capability | Result |
 |------------|--------|
-| Defect detection (YOLOv8, fine-tuned) | mAP50 0.901, precision 0.891, recall 0.826, F1 0.857 on 161 real test images across 20 classes |
+| Defect detection (YOLOv8, fine-tuned) | mAP50 0.874, precision 0.859, recall 0.834, F1 0.846 on 161 real test images across 20 classes |
 | Training scale | 1,083 real labelled images from the MVTec-derived dataset (cable, screw, metal-nut, transistor) |
 | Defect-chain recovery | 3/3 planted causal chains recovered (lift 1.36–1.53) |
 | Live defect-to-chain alerts | 8 of 21 detections raised a downstream-inspection flag |
