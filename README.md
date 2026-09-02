@@ -17,7 +17,7 @@ a closed loop where real outcomes feed back to improve accuracy.
 
 | Layer | Name | What it does | Tech |
 |-------|------|--------------|------|
-| 1 | Sensing | Detect visible defects and derive per-station timing | Fine-tuned YOLOv8 on 1,083 real labelled images |
+| 1 | Sensing | Detect visible defects and derive per-station timing | Fine-tuned YOLOv8 on a MVTec-derived dataset: 1,083 labelled training images, 161 real test images, 20 classes |
 | 2 | Digital Model | Represent the line as a weighted graph (stations = nodes, buffers = edge weights) | BSTAN graph (Lai et al. 2023) |
 | 3 | Prediction | Forecast blockage/starvation, localize the bottleneck, predict defect chains | GAT + GRU, Turning-Point Method, P(B\|A)+lift engine |
 
@@ -105,6 +105,28 @@ shared-state join are all real. The factory layout, vehicle/station/timestamp
 metadata, and inspection history are simulated. Camera-to-station mapping,
 visual-to-process defect taxonomy, and P&L cost assumptions are documented
 rule-based configuration.
+
+**How Cascade handles real-world complexities.**
+
+| Complexity | Compact answer |
+|------------|----------------|
+| Legacy and modern sensor coverage | **[REAL]** Vision-as-a-sensor supplies defect signals and timing without a PLC; BSTAN graph inference estimates blind stations from neighbours; **[DESIGN]** FMEA priors cover cold starts. |
+| Intermittent, multi-causal root causes | **[REAL]** Graph attention plus the Turning-Point Method identifies blockage-to-starvation transitions. The directional chain engine only counts lift when A precedes B on the same vehicle; it recovered 3/3 known chains. These are probable chains for human validation, not proven physical causes. |
+| Risky live PLC changes | **[DESIGN]** Cascade is read-only: it consumes existing OT data and camera feeds, so deployment needs no PLC rewire or maintenance window. |
+| Early defects found late | **[REAL]** An upstream detection can predict a downstream inspection target before the batch arrives. The notebook example predicts `rattle` from `torque_low` at S5 (P=0.52, lift=1.44); 8/21 detections raised a chain flag. |
+| Different stakeholder views | **[ARCHITECTED]** One shared graph feeds the built supervisor alert stream; manager trends and leadership P&L views are roadmap UI layers over the same outputs. |
+| New lines, layouts, and sensor maturity | **[REAL/DESIGN]** The graph representation changes with the topology; **[ARCHITECTED]** transfer learning adapts data-rich lines, while FMEA seeding supports new-site cold starts. |
+| Trust, validation, and false alarms | **[REAL]** Confidence gating abstains on uncertain shifts, multi-seed RMSE is 2.80 ± 0.03 against persistence 3.44 and moving average 3.23, and the unlearnable-anomaly ceiling prevents overclaiming. |
+
+**Where the solution lands.** Cascade models 10 explicit station features and
+infers sensor-poor states through vision and graph context. BSTAN combines graph
+attention with GRU temporal trends; the defect layer uses directional
+correlation and lift. A camera is the low-cost sensing option, while the shared
+graph, JSONL alerts, and read-only integration support supervisor, manager, and
+leadership workflows without disrupting production. Scaling requires a new
+station topology plus retraining or transfer learning; FMEA priors bridge the
+cold start. ROI is expressed through projected downtime, scrap, and inspection
+costs using editable assumptions.
 
 **Business impact.** Forecasting bottlenecks a shift ahead lets teams act
 before the line stalls (against $15k–$50k/min unplanned downtime in auto
