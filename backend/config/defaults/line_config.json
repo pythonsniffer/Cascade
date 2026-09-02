@@ -1,0 +1,26 @@
+{
+  "n_stations": 35,
+  "zones": {
+    "body":  { "start": 0,  "end": 14, "label": "Body Shop" },
+    "paint": { "start": 15, "end": 22, "label": "Paint Shop" },
+    "final_assembly": { "start": 23, "end": 34, "label": "Final Assembly" }
+  },
+  "simulator": {
+    "mode": "generate",
+    "seed": 42,
+    "n_shifts": 600,
+    "bottleneck_rate": 0.30,
+    "sensor_poor_frac": 0.25,
+    "anomaly_frac": 0.015,
+    "train_frac": 0.8,
+    "vehicles_per_shift": 4,
+    "start_shift": 0,
+    "replay_path": null
+  },
+  "tick": {
+    "interval_s": 2.0,
+    "autoplay_on_start": false
+  },
+  "shift_names": ["Shift A", "Shift B", "Shift C"],
+  "shift_duration_minutes": 480
+}

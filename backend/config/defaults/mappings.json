@@ -1,0 +1,22 @@
+{
+  "CAMERA_TO_STATION": { "cam_bodyshop_A": 5, "cam_paint_2": 18, "cam_final_7": 29 },
+  "DEFAULT_STATION": 5,
+  "VISUAL_TO_PROCESS": {
+    "bent": "misalign", "bent_wire": "misalign", "bent_lead": "misalign",
+    "flip": "misalign", "misplaced": "misalign",
+    "cut_inner_insulation": "weld_gap", "cut_outer_insulation": "weld_gap",
+    "cut_lead": "weld_gap", "damaged_case": "weld_gap",
+    "missing_wire": "torque_low", "missing_cable": "torque_low", "cable_swap": "torque_low",
+    "scratch": "seal_fail", "scratch_head": "seal_fail", "scratch_neck": "seal_fail",
+    "poke_insulation": "seal_fail",
+    "color": "paint_run", "manipulated_front": "paint_run",
+    "thread_side": "rattle", "thread_top": "rattle"
+  },
+  "VISUAL_CLASSES": [
+    "bent", "bent_lead", "bent_wire", "cable_swap", "color", "cut_inner_insulation",
+    "cut_lead", "cut_outer_insulation", "damaged_case", "flip", "manipulated_front",
+    "misplaced", "missing_cable", "missing_wire", "poke_insulation", "scratch",
+    "scratch_head", "scratch_neck", "thread_side", "thread_top"
+  ],
+  "DEFECT_TYPES": ["weld_gap", "paint_run", "misalign", "torque_low", "seal_fail", "rattle"]
+}
