@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 
 import { api } from "../lib/api";
 import { useTwin } from "../store/twin";
-import { Info } from "./primitives";
 
 const NAV = [
   { to: "/", label: "Live twin", icon: FloorIcon,
@@ -21,7 +20,7 @@ const NAV = [
 
 const TITLES: Record<string, string> = {
   "/": "Production line", "/quality": "Quality", "/pnl": "Profit & loss",
-  "/history": "History", "/config": "Settings", "/about": "What's real",
+  "/history": "History", "/config": "Settings",
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -60,19 +59,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Icon />
           </NavLink>
         ))}
-        <div className="mt-auto flex flex-col items-center gap-1">
-          <NavLink
-            to="/about"
-            aria-label="What's real"
-            title="What's real — the honest breakdown of what is validated and what is simulated"
-            className={({ isActive }) =>
-              `grid h-10 w-10 place-items-center rounded-xl transition-colors ${
-                isActive ? "bg-accent/10 text-accent" : "text-muted hover:bg-black/[.04] hover:text-ink"}`
-            }
-          >
-            <HelpIcon />
-          </NavLink>
-        </div>
       </nav>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -103,8 +89,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
         </header>
-
-        <ProvenanceStrip />
 
         <main className="min-h-0 flex-1 overflow-auto">{children}</main>
       </div>
@@ -162,29 +146,6 @@ function TickControls() {
   );
 }
 
-/* ── ProvenanceStrip — from /health, never a hardcoded string ── */
-function ProvenanceStrip() {
-  const { health } = useTwin();
-  const det = health?.models.defect;
-  const detectorOff = det && det.state !== "ready";
-  return (
-    <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-hairline
-                    bg-black/[.02] px-5 py-1.5 text-[10.5px] leading-tight text-muted">
-      <span className="font-mono uppercase tracking-[0.12em] text-[9px]">Provenance</span>
-      <span aria-hidden className="text-hairline">|</span>
-      <span>
-        {health?.provenance.statement ?? "Loading provenance from the API…"}
-      </span>
-      {detectorOff && (
-        <span className="pill border border-accent/25 bg-accent/[.07] text-accent">
-          {det!.state === "no_frames" ? "Detector idle — no frames" : "Camera layer off"}
-          <Info term="Camera layer">{det!.detail}</Info>
-        </span>
-      )}
-    </div>
-  );
-}
-
 /* ── icons: thin architectural line-work, 1.25px strokes ── */
 const S = { fill: "none", stroke: "currentColor", strokeWidth: 1.25,
             strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -222,12 +183,5 @@ function GearIcon() {
   return <svg width="18" height="18" viewBox="0 0 20 20">
     <circle cx="10" cy="10" r="2.6" {...S} />
     <path d="M10 2.6v2M10 15.4v2M17.4 10h-2M4.6 10h-2M15.2 4.8l-1.4 1.4M6.2 13.8l-1.4 1.4M15.2 15.2l-1.4-1.4M6.2 6.2 4.8 4.8" {...S} />
-  </svg>;
-}
-function HelpIcon() {
-  return <svg width="18" height="18" viewBox="0 0 20 20">
-    <circle cx="10" cy="10" r="7" {...S} />
-    <path d="M8.2 8a1.9 1.9 0 1 1 2.4 1.9c-.5.2-.6.6-.6 1.1" {...S} />
-    <circle cx="10" cy="13.6" r=".7" fill="currentColor" stroke="none" />
   </svg>;
 }

@@ -67,18 +67,13 @@ export function AssumptionsPanel({ pnl, pending, setPending }: {
   return (
     <aside className="card-solid h-fit p-4">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-display text-[15px] font-medium">Your assumptions</h2>
+        <h2 className="font-display text-[15px] font-medium">Business Impact Inputs</h2>
         <button onClick={resetAll} disabled={pending}
                 className="text-[11px] text-muted underline underline-offset-2
                            transition-colors hover:text-ink disabled:opacity-40">
           Reset to defaults
         </button>
       </div>
-      <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
-        These are yours to set — nothing here is measured or hardcoded. Change one and the
-        projection updates straight away, without re-running any model.
-      </p>
-
       {error && (
         <p role="alert" className="mt-2 rounded-lg border border-accent/30 bg-accent/[.06]
                                    px-2.5 py-1.5 text-[11.5px] text-accent">{error}</p>

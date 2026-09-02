@@ -1,7 +1,6 @@
 /** Quality (/quality) — detections, chain map, model card (§5.2). */
 import { useEffect, useState } from "react";
 
-import { ChainGraph } from "../components/ChainGraph";
 import { EmptyState, Info, SectionTitle } from "../components/primitives";
 import { api } from "../lib/api";
 import { humanise, pct, stationLabel } from "../lib/format";
@@ -9,7 +8,7 @@ import type { DefectEvent, DetectorStatus } from "../lib/types";
 import { useTwin } from "../store/twin";
 
 export function Quality() {
-  const { health, config, detections: liveDetections } = useTwin();
+  const { health, detections: liveDetections } = useTwin();
   const [detector, setDetector] = useState<DetectorStatus | null>(null);
   const [detections, setDetections] = useState<DefectEvent[]>([]);
 
@@ -22,10 +21,7 @@ export function Quality() {
   const det = detector ?? health?.models.defect;
   const detectorLoaded = det?.detector_loaded ?? false;
   const running = det?.state === "ready";
-  const firedTriggers = new Set(shown.map(d => d.defect_type).filter(Boolean) as string[]);
   const metrics = health?.metrics.detector;
-  // the loaded checkpoint's own recorded numbers, read from best.pt at load time
-  const ckpt = health?.metrics.detector_checkpoint;
 
   return (
     <div className="space-y-5 p-4 lg:p-6">
@@ -36,33 +32,17 @@ export function Quality() {
         </SectionTitle>
         {detectorLoaded ? (
           <>
-            {ckpt && (
-              <>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <MetricCard label="mAP50" value={ckpt.mAP50.toFixed(3)}
-                    help="Mean average precision at 50% overlap — the standard single score for how well a detector finds and places defects." />
-                  <MetricCard label="Precision" value={ckpt.precision.toFixed(3)}
-                    help="Of the defects it flagged, how many were real." />
-                  <MetricCard label="Recall" value={ckpt.recall.toFixed(3)}
-                    help="Of the real defects present, how many it found." />
-                  <MetricCard label="F1" value={(ckpt.f1 ?? 0).toFixed(3)}
-                    help="The balance between precision and recall in one number." />
-                </div>
-                <p className="mt-2 text-[11px] leading-relaxed text-muted">
-                  Read from the loaded checkpoint itself
-                  {ckpt.train_epochs && ` (${ckpt.train_epochs} epochs at ${ckpt.train_imgsz}px)`}.
-                  {" "}{ckpt.note}
-                </p>
-              </>
-            )}
             {metrics && (
-              <p className="mt-2 rounded-xl border border-hairline bg-black/[.02] p-2.5
-                            text-[11px] leading-relaxed text-muted">
-                For comparison, the notebook reports mAP50 {metrics.mAP50}, precision{" "}
-                {metrics.precision}, recall {metrics.recall}, F1 {metrics.f1} on{" "}
-                {metrics.test_images} real test images, trained on {metrics.train_images} real
-                labelled images. Source: {metrics.source}.
-              </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <MetricCard label="mAP50" value={metrics.mAP50.toFixed(3)}
+                  help="Mean average precision at 50% overlap — the standard single score for how well a detector finds and places defects." />
+                <MetricCard label="Precision" value={metrics.precision.toFixed(3)}
+                  help="Of the defects it flagged, how many were real." />
+                <MetricCard label="Recall" value={metrics.recall.toFixed(3)}
+                  help="Of the real defects present, how many it found." />
+                <MetricCard label="F1" value={(metrics.f1 ?? 0).toFixed(3)}
+                  help="The balance between precision and recall in one number." />
+              </div>
             )}
             {!running && (
               <p className="mt-2 rounded-xl border border-accent/25 bg-accent/[.05] p-2.5
@@ -108,13 +88,6 @@ export function Quality() {
         )}
       </section>
 
-      {/* chain map */}
-      <section>
-        <SectionTitle hint="Learned from inspection history: when the trigger defect appears, the downstream defect follows more often than chance.">
-          Defect chains
-        </SectionTitle>
-        <ChainGraph chains={config?.chains ?? []} fired={firedTriggers} />
-      </section>
     </div>
   );
 }

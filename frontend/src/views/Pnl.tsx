@@ -26,12 +26,6 @@ export function Pnl() {
 
   return (
     <div className="space-y-5 p-4 lg:p-6">
-      {/* ── mandatory banner — never a P&L number without it ── */}
-      <div className="rounded-card border border-accent/25 bg-accent/[.05] px-4 py-2.5
-                      text-[12px] leading-relaxed">
-        <span className="font-medium">{pnl.disclaimer}</span>
-      </div>
-
       {/* ── headline ── */}
       <section className="flex flex-wrap items-end gap-x-8 gap-y-3">
         <div>

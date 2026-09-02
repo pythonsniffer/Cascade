@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { AppShell } from "./components/AppShell";
-import { About } from "./views/About";
 import { Config } from "./views/Config";
 import { History } from "./views/History";
 import { LiveTwin } from "./views/LiveTwin";
@@ -49,7 +48,6 @@ export default function App() {
         <Route path="/pnl" element={<Pnl />} />
         <Route path="/history" element={<History />} />
         <Route path="/config" element={<Config />} />
-        <Route path="/about" element={<About />} />
         <Route path="*" element={<LiveTwin />} />
       </Routes>
     </AppShell>

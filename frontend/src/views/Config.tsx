@@ -1,14 +1,13 @@
 /** Settings (/config) — assumptions, camera map, tick controls, audit trail (§5.5). */
 import { useEffect, useState } from "react";
 
-import { AssumptionsPanel } from "../components/AssumptionsPanel";
 import { Info, SectionTitle } from "../components/primitives";
 import { api } from "../lib/api";
 import { stationLabel, zoneLabel } from "../lib/format";
 import { useTwin } from "../store/twin";
 
 export function Config() {
-  const { config, pnl, line, health, playing, intervalS, refreshConfig, refreshPnl } = useTwin();
+  const { config, line, health, playing, intervalS, refreshConfig, refreshPnl } = useTwin();
   const [pending, setPending] = useState(false);
   const [interval, setIntervalS] = useState(intervalS);
   const [cameraDraft, setCameraDraft] = useState<Record<string, string>>({});
@@ -49,15 +48,8 @@ export function Config() {
 
   return (
     <div className="space-y-5 p-4 lg:p-6">
-      <p className="rounded-card border border-hairline bg-black/[.02] px-4 py-2.5 text-[12px]
-                    leading-relaxed text-muted">
-        These settings drive the whole demo — nothing here is hardcoded. Every change is recorded
-        in the audit trail below.
-      </p>
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-        {pnl && <AssumptionsPanel pnl={pnl} pending={pending} setPending={setPending} />}
-
+      <div className="max-w-3xl">
         <div className="space-y-5">
           {/* tick controls */}
           <section className="card-solid p-4">
@@ -137,7 +129,7 @@ export function Config() {
           <section className="card-solid p-4">
             <SectionTitle>Fixed by design</SectionTitle>
             <dl className="space-y-1.5 text-[12px]">
-              <Row label="Stations">{line?.n_stations ?? "—"} (from graph.pt, read-only)</Row>
+              <Row label="Stations">{line?.n_stations ?? "—"}</Row>
               <Row label="Forecast window">
                 {health?.models.bottleneck.T_w ?? "—"} shifts
               </Row>
@@ -148,9 +140,6 @@ export function Config() {
               </Row>
               <Row label="Simulator mode">{health?.mode ?? "—"}</Row>
             </dl>
-            <p className="mt-2.5 text-[11px] leading-relaxed text-muted">
-              {line?.note}
-            </p>
           </section>
         </div>
       </div>
@@ -170,7 +159,8 @@ export function Config() {
                 {a.config_name}
               </span>
               <span className="text-[11.5px] text-muted">by {a.actor}</span>
-              <span className="w-full font-mono text-[10.5px] text-muted">
+              <span className="w-full break-all font-mono text-[10.5px] leading-relaxed
+                               text-muted">
                 {Object.entries(a.changes).map(([k, v]: [string, any]) =>
                   `${k}: ${JSON.stringify(v?.from)} → ${JSON.stringify(v?.to)}`).join("  ·  ")}
               </span>

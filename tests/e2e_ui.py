@@ -37,12 +37,20 @@ with sync_playwright() as p:
     print("\n== navigation ==")
     page.goto(UI); page.wait_for_load_state("networkidle"); page.wait_for_timeout(1500)
     for label, expect_text in [("Quality", "Detector model card"), ("Profit & loss", "Net projected"),
-                               ("History", "Show last"), ("Settings", "Line controls"),
-                               ("What's real", "What is real")]:
+                               ("History", "Show last"), ("Settings", "Line controls")]:
         page.get_by_role("link", name=label).click()
         page.wait_for_timeout(900)
         check(f"nav → {label}", expect_text.lower() in page.inner_text("body").lower())
     page.get_by_role("link", name="Live twin").click(); page.wait_for_timeout(900)
+
+    print("\n== removed surfaces stay removed ==")
+    for route, label in [("/", "live"), ("/quality", "quality"), ("/pnl", "pnl"),
+                         ("/config", "config")]:
+        page.goto(UI + route); page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(700)
+        t = page.inner_text("body")
+        check(f"{label}: no provenance strip", "The mechanisms - detection" not in t)
+    page.goto(UI + "/"); page.wait_for_timeout(700)
 
     print("\n== deep links serve the app, not the API ==")
     # Regression guard: /pnl, /history and /config are BOTH frontend routes and REST
@@ -99,9 +107,9 @@ with sync_playwright() as p:
     print("\n== P&L ==")
     page.get_by_role("link", name="Profit & loss").click(); page.wait_for_timeout(1500)
     body = page.inner_text("body")
-    check("mandatory disclaimer present", "not measured savings" in body.lower())
     check("breakdown shown, not a bare number", "Value from bottleneck" in body)
     check("sources legend present", "your assumption" in body.lower())
+    check("inputs panel is named Business Impact Inputs", "Business Impact Inputs" in body)
     field = page.get_by_role("spinbutton", name="Downtime cost per min")
     old = field.input_value()
     headline = page.locator("p.font-display").first.inner_text()
@@ -130,22 +138,16 @@ with sync_playwright() as p:
     if det["state"] == "no_detector":
         # metrics must be withheld: this instance cannot stand behind them
         check("detector-off state is explicit", "not loaded" in q.lower())
-        check("detector metrics withheld when unloaded", "0.901" not in q)
+        check("detector metrics withheld when unloaded", "0.874" not in q)
     else:
-        # detector present: its own checkpoint numbers may be shown, and if it has
-        # no frames the page must say so rather than implying it is inspecting.
-        check("loaded detector shows its recorded metrics", "mAP50" in q)
+        m = json.loads(urllib.request.urlopen(API + "/health", timeout=20)
+                       .read())["metrics"]["detector"]
+        check("model card shows the test-split metrics",
+              f"{m['mAP50']:.3f}" in q and f"{m['recall']:.3f}" in q)
         check("idle detector says why it is quiet",
               det["state"] == "ready" or "no camera frames" in q.lower(), det["state"])
+    check("defect chains section is gone from /quality", "Defect chains" not in q)
     page.screenshot(path=f"{SHOTS}/quality.png")
-
-    print("\n== about page is API-driven ==")
-    page.get_by_role("link", name="What's real").click(); page.wait_for_timeout(1200)
-    a = page.inner_text("body")
-    check("about shows measured bottleneck RMSE", "2.689" in a, )
-    check("about shows chain recovery", "3 of 3" in a or "3/3" in a or "Recovered 3" in a)
-    check("about explains the fixed 35 stations", "35 stations" in a)
-    page.screenshot(path=f"{SHOTS}/about.png")
 
     print("\n== settings ==")
     page.get_by_role("link", name="Settings").click(); page.wait_for_timeout(1500)
