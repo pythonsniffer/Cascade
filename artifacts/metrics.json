@@ -1,0 +1,34 @@
+{
+  "bottleneck": {
+    "test_rmse": 2.689,
+    "localization_within_2_all": 0.646,
+    "localization_within_2_no_edge": 0.658,
+    "n_bottleneck_test_shifts": 48,
+    "baseline_persistence_rmse": 3.442,
+    "baseline_moving_avg_rmse": 3.226,
+    "source": "measured_at_export"
+  },
+  "detector": {
+    "mAP50": 0.874,
+    "mAP50_95": 0.682,
+    "precision": 0.859,
+    "recall": 0.834,
+    "f1": 0.846,
+    "test_images": 161,
+    "train_images": 1083,
+    "source": "mvtec_test_split_eval",
+    "note": "Real evaluation on the MVTec test split via YOLO model.val()."
+  },
+  "chains": {
+    "source": "measured_at_export",
+    "planted": 3,
+    "recovered": 3,
+    "recovered_pairs": [
+      "paint_run->seal_fail",
+      "torque_low->rattle",
+      "weld_gap->misalign"
+    ],
+    "history_vehicles": 5000,
+    "history_records": 7886
+  }
+}

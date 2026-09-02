@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+frontend/dist/
+.pytest_cache/
+.DS_Store
+*.egg-info/
+
+# Runtime state at the REPO ROOT only. These must stay anchored with a leading
+# slash: an unanchored "config/" also matches backend/config/, which silently
+# excluded the entire config package from the repo and broke every fresh clone.
+/config/
+/data/

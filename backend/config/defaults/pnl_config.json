@@ -1,0 +1,24 @@
+{
+  "downtime_cost_per_min": 850.0,
+  "downtime_minutes_avoided_per_flag": 12.0,
+  "scrap_cost_per_unit": 1400.0,
+  "avg_units_that_would_carry_it": 6.0,
+  "defect_caught_value": 2200.0,
+  "inspection_cost_per_check": 65.0,
+  "false_alarm_cost": 320.0,
+  "vehicles_per_shift": 4,
+  "shifts_per_day": 3,
+  "currency": "USD",
+  "_units": {
+    "downtime_cost_per_min": "currency per minute of unplanned line downtime",
+    "downtime_minutes_avoided_per_flag": "minutes of downtime avoided per confident bottleneck flag acted on",
+    "scrap_cost_per_unit": "currency scrapped/reworked per affected unit",
+    "avg_units_that_would_carry_it": "units that would have carried the defect before it was noticed",
+    "defect_caught_value": "currency value of catching one chained defect before it propagates",
+    "inspection_cost_per_check": "currency cost of raising and performing one inspection",
+    "false_alarm_cost": "currency cost of acting on a low-confidence / abstained call",
+    "vehicles_per_shift": "vehicles produced per shift (drives extrapolation only)",
+    "shifts_per_day": "shifts per production day (drives extrapolation only)"
+  },
+  "_provenance": "ALL VALUES ARE USER ASSUMPTIONS. They are illustrative starting points, not measured plant figures. Edit them in /config or /pnl."
+}

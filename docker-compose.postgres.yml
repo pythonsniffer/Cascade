@@ -1,0 +1,34 @@
+# Optional Postgres store. SQLModel means only the connection string changes —
+# no model, service or contract code is touched (Architecture §10).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up
+#
+# The backend image already carries psycopg via the postgres extra; if you built
+# before that was added, rebuild with `docker compose build backend`.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cascade-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cascade}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cascade}
+      POSTGRES_DB: ${POSTGRES_DB:-cascade}
+    volumes:
+      - cascade-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cascade}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    environment:
+      CASCADE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cascade}:${POSTGRES_PASSWORD:-cascade}@db:5432/${POSTGRES_DB:-cascade}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  cascade-pg:

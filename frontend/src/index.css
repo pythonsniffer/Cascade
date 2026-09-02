@@ -1,0 +1,54 @@
+@import "@fontsource/archivo/300.css";
+@import "@fontsource/archivo/400.css";
+@import "@fontsource/archivo/500.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04";
+  }
+  /* tabular numerics everywhere a figure is compared down a column */
+  .tnum { font-variant-numeric: tabular-nums; }
+  :focus-visible { @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-canvas; }
+}
+
+@layer components {
+  /* floating frosted card — hovers over the floor without hiding it */
+  .card {
+    @apply rounded-card border border-white/60 bg-white/80 shadow-float;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .card-solid { @apply rounded-card border border-hairline bg-surface shadow-rail; }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[11px] font-medium;
+  }
+  .eyebrow {
+    @apply font-mono text-[10px] uppercase tracking-[0.14em] text-muted;
+  }
+  .hairline { @apply border-hairline; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* thin, unobtrusive scrollbars — this is a drawing, not a browser chrome demo */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #DDDAD4; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #C9C6C0; }

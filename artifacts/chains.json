@@ -1,0 +1,20 @@
+[
+  {
+    "trigger":"weld_gap",
+    "downstream":"misalign",
+    "P_B_given_A":0.629,
+    "lift":1.53
+  },
+  {
+    "trigger":"torque_low",
+    "downstream":"rattle",
+    "P_B_given_A":0.524,
+    "lift":1.44
+  },
+  {
+    "trigger":"paint_run",
+    "downstream":"seal_fail",
+    "P_B_given_A":0.516,
+    "lift":1.36
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "artifacts_dir": "artifacts",
+  "bottleneck": {
+    "bstan_weights": ["bstan_seed0.pt", "bstan_seed1.pt", "bstan_seed2.pt"],
+    "graph": "graph.pt",
+    "normalization": "normalization.json",
+    "gat_hidden": 48,
+    "gru_hidden": 48,
+    "heads": 3
+  },
+  "defect": {
+    "yolo_weights": "best.pt",
+    "imgsz": 416,
+    "conf": 0.25,
+    "sample_images_dir": "sample_frames",
+    "required": false
+  },
+  "chains": {
+    "table": "chains.json",
+    "min_lift": 1.2
+  },
+  "metrics": "metrics.json"
+}
