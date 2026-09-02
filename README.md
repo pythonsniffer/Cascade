@@ -21,7 +21,8 @@ This is the project's credibility, so it is stated first and repeated in the UI.
 |---|---|---|
 | BSTAN bottleneck forecaster | Test RMSE **2.689** vs persistence 3.44 and moving-average 3.23; localises within ±2 stations on **65%** of bottleneck shifts (66% excluding edge stations) | measured at artifact export, `artifacts/metrics.json` |
 | Defect-chain engine | **3/3** planted causal chains recovered, lifts **1.53 / 1.44 / 1.36** | measured at artifact export |
-| Fine-tuned YOLOv8 detector | mAP50 0.901, precision 0.891, recall 0.826, F1 0.857 on 161 real test images | the notebook validation run — **see the caveat below** |
+| Fine-tuned YOLOv8 detector | mAP50 **0.9098**, precision 0.9051, recall 0.8441, F1 0.8735 | read from `best.pt` itself at load time (`checkpoint_train_metrics`) |
+| — same detector, notebook's figures | mAP50 0.901, precision 0.891, recall 0.826, F1 0.857 on 161 real test images | the notebook validation run, shown for comparison |
 
 **Simulated — labelled everywhere**
 The line itself: the 35-station layout, buffer sizes, per-shift process features and
@@ -35,31 +36,38 @@ config layer assigns them.
 > The mechanisms — detection, chaining, forecasting, gating — are real and validated.
 > The factory around them is a realistic simulation, exactly as PS4 invites.
 
-### Caveat: the detector artifact is not in this repository
+### Caveat: the detector is loaded but has no frames to inspect
 
-`artifacts/best.pt` is **absent**. Producing it needs the MVTec-derived dataset from
-HuggingFace plus a GPU, neither of which was available where this was built.
+`artifacts/best.pt` **is** present and verified — 20 classes matching `VISUAL_CLASSES`,
+trained 50 epochs at 416 px. The loader compares its class names against the configured
+list and **refuses to start** if handed a COCO or otherwise foreign model.
 
-The consequence is enforced honestly rather than papered over:
+What is still missing are the **camera frames** for it to run on. The MVTec-derived test
+images need HuggingFace, which was unreachable where this was built. So `/health` reports:
 
-- the backend reports `models.defect.detector_loaded: false` on `/health`;
-- the defect layer emits **no events at all** — nothing is simulated in its place;
-- the UI says "camera layer off" and the Quality page **withholds the detector's
-  published metrics**, because this instance is not running it and cannot stand
-  behind them.
-
-**To switch the layer on**, drop the fine-tuned weights in and restart:
-
-```bash
-cp /path/to/best.pt artifacts/best.pt
-cp -r /path/to/test/images artifacts/sample_frames   # real frames for the gallery
-docker compose restart backend
+```json
+"defect": { "detector_loaded": true, "state": "no_frames",
+            "detail": "The fine-tuned detector is loaded and verified, but there are
+                       no camera frames for it to inspect." }
 ```
 
-The loader asserts the weights are the fine-tuned Cascade detector by comparing its
-class names against the configured `VISUAL_CLASSES`, and **refuses to start** if
-handed a COCO or otherwise foreign model. Set `model_config.defect.required` to
-`true` to make an absent detector a hard startup failure instead of a degraded mode.
+No detections are produced, and **nothing is substituted for them**. The Quality page
+shows the detector's own recorded metrics and says plainly why the gallery is empty.
+
+**To produce detections**, add real frames and restart:
+
+```bash
+mkdir -p artifacts/sample_frames
+cp /path/to/mvtec_yolo/test/images/*.png artifacts/sample_frames/
+docker compose restart backend      # or restart uvicorn
+```
+
+Do **not** substitute unrelated photographs. The detector knows 20 MVTec defect classes;
+on out-of-domain images it emits meaningless boxes the UI would present as real defect
+detections. An empty gallery is honest; a fabricated one is not.
+
+Set `model_config.defect.required` to `true` to make an absent detector a hard startup
+failure instead of a degraded mode.
 
 ---
 
@@ -100,7 +108,7 @@ cd frontend && npm install && npm run dev            # :5173, proxies to :8000
 Tests:
 
 ```bash
-.venv/bin/python -m pytest tests/ -q                 # 41 backend tests
+.venv/bin/python -m pytest tests/ -q                 # 44 backend tests
 ```
 
 ---
@@ -121,6 +129,14 @@ It writes `bstan_seed{0,1,2}.pt`, `graph.pt`, `normalization.json`, `chains.json
 
 Every metric it writes carries a `source` field: `measured_at_export` for numbers it
 measured, `notebook_validation_run` for the detector's, which it did not re-measure.
+
+## Further reading
+
+| | |
+|---|---|
+| `docs/DOCKER_DEPLOYMENT.md` | bringing the stack up with Docker, and what breaks first |
+| `docs/WEBAPP_BUILD.md` | how the app was built and why each decision was made |
+| `docs/DEPLOYMENT.md` | sizing, ports, volumes, startup behaviour |
 
 ---
 

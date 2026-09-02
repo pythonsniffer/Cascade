@@ -44,6 +44,18 @@ with sync_playwright() as p:
         check(f"nav → {label}", expect_text.lower() in page.inner_text("body").lower())
     page.get_by_role("link", name="Live twin").click(); page.wait_for_timeout(900)
 
+    print("\n== deep links serve the app, not the API ==")
+    # Regression guard: /pnl, /history and /config are BOTH frontend routes and REST
+    # endpoints. A weak "the page has text" assertion missed this once, because
+    # Chromium renders raw JSON in a viewer that looks like a rendered page.
+    for route in ("/pnl", "/history", "/config"):
+        r = urllib.request.urlopen(UI + route, timeout=20)
+        ctype = r.headers.get("content-type", "")
+        body = r.read(400).decode("utf-8", "replace")
+        check(f"{route} serves HTML, not JSON",
+              "text/html" in ctype and body.lstrip().lower().startswith("<!doctype html"),
+              ctype)
+
     print("\n== live floor + station interaction ==")
     markers = page.locator('svg [role="button"][aria-label^="Station S"]')
     check("35 station markers from /line", markers.count() == 35, f"got {markers.count()}")
