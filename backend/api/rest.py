@@ -20,9 +20,6 @@ router = APIRouter()
 def health():
     models = state.models_status()
     metrics = dict(state.metrics)
-    # the running detector's own recorded numbers, straight from the artifact
-    if state.df.checkpoint_metrics:
-        metrics = {**metrics, "detector_checkpoint": state.df.checkpoint_metrics}
     return {
         "status": "ok",
         # bottleneck models are mandatory; the detector is reported separately so the

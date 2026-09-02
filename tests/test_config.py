@@ -85,6 +85,7 @@ def test_metrics_come_from_artifacts_not_source(app_state):
     """Context §8.2: never fabricate a metric — they are read from metrics.json."""
     m = app_state.metrics
     assert m["bottleneck"]["source"] == "measured_at_export"
-    assert m["detector"]["source"] == "notebook_validation_run"
-    # the detector's numbers are attributed, not silently presented as ours
+    # the detector's numbers are a real evaluation on the held-out MVTec test split
+    assert m["detector"]["source"] == "mvtec_test_split_eval"
     assert "note" in m["detector"]
+    assert 0 < m["detector"]["mAP50"] <= 1

@@ -67,8 +67,7 @@ class AppState:
                     f"precision {det_m.get('precision', 'n/a')}, recall "
                     f"{det_m.get('recall', 'n/a')}, F1 {det_m.get('f1', 'n/a')} on "
                     f"{det_m.get('test_images', 'n/a')} real test images, trained on "
-                    f"{det_m.get('train_images', 'n/a')} real labelled images. Loaded here and "
-                    f"verified as the fine-tuned detector, not a COCO model.")
+                    f"{det_m.get('train_images', 'n/a')} real labelled images.")
             if not self.df.sample_frames:
                 line += (" No camera frames are available in this instance, so it is not "
                          "producing detections right now.")

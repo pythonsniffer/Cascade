@@ -9,14 +9,15 @@
     "source": "measured_at_export"
   },
   "detector": {
-    "mAP50": 0.901,
-    "precision": 0.891,
-    "recall": 0.826,
-    "f1": 0.857,
+    "mAP50": 0.874,
+    "mAP50_95": 0.682,
+    "precision": 0.859,
+    "recall": 0.834,
+    "f1": 0.846,
     "test_images": 161,
     "train_images": 1083,
-    "source": "notebook_validation_run",
-    "note": "Measured in Cascade_DefectLayer/Cascade_Integrated on the MVTec-derived test split. Not re-measured at export (dataset not bundled)."
+    "source": "mvtec_test_split_eval",
+    "note": "Real evaluation on the MVTec test split via YOLO model.val()."
   },
   "chains": {
     "source": "measured_at_export",
