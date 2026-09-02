@@ -9,6 +9,10 @@ CDN (`production.cloudfront.docker.com` returns 403). Treat the build as unverif
 Everything else — backend, frontend, models, 44 backend tests, 33 browser checks — was
 run and passes. Where a step is likely to be where things first break, this file says so.
 
+**If Docker turns out to be a dead end**, `./scripts/run_local.sh` runs the identical
+application without it, and that path is verified working. Docker is packaging, not a
+dependency of the app.
+
 ---
 
 ## 0. Preconditions

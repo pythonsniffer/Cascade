@@ -42,8 +42,8 @@ class AppState:
 
         self.engine = TwinEngine(self.settings, simulator, bottleneck, defect, integration, pnl)
         self.ready = True
-        log.info("cascade ready: %d stations, defect layer %s",
-                 self.bn.n_stations, "ON" if defect.enabled else "OFF (no detector artifact)")
+        log.info("cascade ready: %d stations | defect layer: %s",
+                 self.bn.n_stations, defect.status()["detail"])
 
     # ── provenance, built from live state (never a hardcoded UI string) ──
     def provenance(self) -> dict:

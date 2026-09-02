@@ -73,6 +73,21 @@ failure instead of a degraded mode.
 
 ## Run it
 
+**Without Docker** (verified working — this is the path that was actually run):
+
+```bash
+./scripts/run_local.sh            # builds the frontend, serves it on :4173
+./scripts/run_local.sh --dev      # Vite dev server on :5173 with hot reload
+./scripts/run_local.sh --backend  # backend only, on :8000
+```
+
+It creates the virtualenv, installs what is missing, checks the artifacts are present,
+waits for the models to load, prints exactly what loaded, then starts the dashboard.
+Ctrl-C stops both.
+
+**With Docker** (setup is written and validated but the images were never built here —
+see `docs/DOCKER_DEPLOYMENT.md`):
+
 ```bash
 docker compose up --build
 ```
