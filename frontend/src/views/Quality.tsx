@@ -129,28 +129,46 @@ function MetricCard({ label, value, help }: { label: string; value: string; help
 }
 
 function DetectionCard({ d }: { d: DefectEvent }) {
-  const [w, h] = [320, 180];
-  const bb = d.bbox;
-  // bboxes are in the detector's input pixel space; scale to the preview box
-  const scale = bb ? Math.min(w / Math.max(bb[2], 1), h / Math.max(bb[3], 1), 1) : 1;
+  // The detector returns boxes in the ORIGINAL image's pixel space, and the preview
+  // letterboxes the image with object-contain. So the overlay has to reproduce that
+  // fit — scale by the contained size and offset by the letterbox bars — rather than
+  // assume the image fills the frame.
+  const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
+  const BOX_W = 320, BOX_H = 190;
+
+  let rect: { x: number; y: number; w: number; h: number } | null = null;
+  if (d.bbox && nat && nat.w > 0 && nat.h > 0) {
+    const k = Math.min(BOX_W / nat.w, BOX_H / nat.h);
+    const offX = (BOX_W - nat.w * k) / 2;
+    const offY = (BOX_H - nat.h * k) / 2;
+    const [x1, y1, x2, y2] = d.bbox;
+    rect = {
+      x: offX + x1 * k, y: offY + y1 * k,
+      w: Math.max(2, (x2 - x1) * k), h: Math.max(2, (y2 - y1) * k),
+    };
+  }
+
   return (
     <article className="card-solid overflow-hidden">
-      <div className="relative bg-[#F1EFEC]" style={{ height: h }}>
+      <div className="relative bg-[#F1EFEC]" style={{ height: BOX_H }}>
         {d.frame ? (
-          <img src={`/frames/${d.frame}`} alt={`Frame for vehicle ${d.vehicle_id}`}
-               className="h-full w-full object-contain" />
+          <img
+            src={`/frames/${d.frame}`}
+            alt={`Camera frame for vehicle ${d.vehicle_id}`}
+            className="h-full w-full object-contain"
+            onLoad={(e) => setNat({
+              w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+          />
         ) : (
           <div className="grid h-full place-items-center px-4 text-center font-mono text-[10px]
                           leading-relaxed text-muted">
-            frame image not bundled in this instance
+            frame image not available in this instance
           </div>
         )}
-        {bb && (
+        {rect && (
           <svg className="pointer-events-none absolute inset-0 h-full w-full"
-               viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden>
-            <rect x={bb[0] * scale} y={bb[1] * scale}
-                  width={Math.max(2, (bb[2] - bb[0]) * scale)}
-                  height={Math.max(2, (bb[3] - bb[1]) * scale)}
+               viewBox={`0 0 ${BOX_W} ${BOX_H}`} aria-hidden>
+            <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h}
                   fill="none" stroke="#F0552B" strokeWidth="1.6" />
           </svg>
         )}
