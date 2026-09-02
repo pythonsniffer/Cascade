@@ -1,3 +1,5 @@
+import pytest
+
 """REST + WebSocket surface (Backend Instructions §9)."""
 
 
@@ -82,3 +84,50 @@ def test_reset_clears_session(client):
     client.post("/control/tick")
     assert client.post("/control/reset").json()["cumulative_net"] == 0.0
     assert client.get("/history").json()["shifts"] == []
+
+
+def test_single_container_mode_serves_the_spa(tmp_path, monkeypatch):
+    """With CASCADE_FRONTEND_DIST set, the app serves the dashboard and the API moves
+    under /api — otherwise the root-level /pnl route would shadow the SPA's own /pnl
+    and a reload would return JSON again."""
+    import importlib
+
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "index.html").write_text("<!doctype html><title>Cascade</title>")
+    (dist / "assets" / "app.js").write_text("console.log(1)")
+    monkeypatch.setenv("CASCADE_FRONTEND_DIST", str(dist))
+
+    import backend.main as main
+    importlib.reload(main)
+    try:
+        from fastapi.testclient import TestClient
+        with TestClient(main.app) as c:
+            # SPA routes return the app, never the API payload of the same name
+            for route in ("/", "/pnl", "/history", "/config"):
+                r = c.get(route)
+                assert r.status_code == 200, route
+                assert "<!doctype html>" in r.text.lower(), f"{route} did not serve the SPA"
+            # the API is still reachable, under /api
+            assert c.get("/api/health").json()["models_loaded"] is True
+            assert c.get("/healthz").json()["serving_frontend"] is True
+            # a real static file is served as itself, not the fallback
+            assert "console.log" in c.get("/assets/app.js").text
+    finally:
+        monkeypatch.delenv("CASCADE_FRONTEND_DIST", raising=False)
+        importlib.reload(main)
+
+
+def test_detector_frames_are_served(client, app_state):
+    """The Quality gallery shows the real image behind each detection, so /frames must
+    resolve — including in single-container mode, where a route registered after the
+    SPA catch-all would be shadowed."""
+    frames = app_state.df.sample_frames
+    if not frames:
+        pytest.skip("no frames in this instance")
+    r = client.get(f"/frames/{frames[0].name}")
+    assert r.status_code == 200
+    assert len(r.content) > 100
+    assert client.get("/frames/nope.png").status_code == 404
+    # no path traversal out of the frames directory
+    assert client.get("/frames/../../backend/main.py").status_code in (404, 400)

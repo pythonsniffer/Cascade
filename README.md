@@ -85,11 +85,22 @@ It creates the virtualenv, installs what is missing, checks the artifacts are pr
 waits for the models to load, prints exactly what loaded, then starts the dashboard.
 Ctrl-C stops both.
 
-**With Docker** (setup is written and validated but the images were never built here —
-see `docs/DOCKER_DEPLOYMENT.md`):
+**With Docker** — one container (what hosted deployments use):
 
 ```bash
-docker compose up --build
+docker build -t cascade . && docker run -p 7860:7860 cascade    # everything on :7860
+```
+
+or two containers behind nginx:
+
+```bash
+docker compose up --build                                        # dashboard on :3000
+```
+
+**Hosted live** — see `docs/HOSTING.md`. Hugging Face Spaces is a one-command push:
+
+```bash
+./deploy/huggingface/push_to_space.sh <your-hf-username>
 ```
 
 - dashboard → http://localhost:3000
@@ -149,6 +160,7 @@ measured, `notebook_validation_run` for the detector's, which it did not re-meas
 
 | | |
 |---|---|
+| `docs/HOSTING.md` | running it locally, in one container, or hosted live |
 | `docs/DOCKER_DEPLOYMENT.md` | bringing the stack up with Docker, and what breaks first |
 | `docs/WEBAPP_BUILD.md` | how the app was built and why each decision was made |
 | `docs/DEPLOYMENT.md` | sizing, ports, volumes, startup behaviour |

@@ -9,6 +9,16 @@ CDN (`production.cloudfront.docker.com` returns 403). Treat the build as unverif
 Everything else — backend, frontend, models, 44 backend tests, 33 browser checks — was
 run and passes. Where a step is likely to be where things first break, this file says so.
 
+**Two Docker shapes.** The root `Dockerfile` is an all-in-one image — FastAPI serves the
+API and the built dashboard on one port, which is what single-container hosts need:
+
+```bash
+docker build -t cascade . && docker run -p 7860:7860 cascade    # everything on :7860
+```
+
+`docker compose` builds the two-container split instead (nginx + backend). Use whichever
+suits the target; both run the same application. See `docs/HOSTING.md`.
+
 **If Docker turns out to be a dead end**, `./scripts/run_local.sh` runs the identical
 application without it, and that path is verified working. Docker is packaging, not a
 dependency of the app.
