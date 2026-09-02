@@ -19,9 +19,13 @@ export function Quality() {
   }, []);
 
   const shown = liveDetections.length ? liveDetections : detections;
-  const detectorOn = detector?.detector_loaded ?? health?.models.defect.detector_loaded ?? false;
+  const det = detector ?? health?.models.defect;
+  const detectorLoaded = det?.detector_loaded ?? false;
+  const running = det?.state === "ready";
   const firedTriggers = new Set(shown.map(d => d.defect_type).filter(Boolean) as string[]);
   const metrics = health?.metrics.detector;
+  // the loaded checkpoint's own recorded numbers, read from best.pt at load time
+  const ckpt = health?.metrics.detector_checkpoint;
 
   return (
     <div className="space-y-5 p-4 lg:p-6">
@@ -30,22 +34,42 @@ export function Quality() {
         <SectionTitle hint="How well the detector performed on its held-out test images.">
           Detector model card
         </SectionTitle>
-        {detectorOn && metrics ? (
+        {detectorLoaded ? (
           <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <MetricCard label="mAP50" value={metrics.mAP50.toFixed(3)}
-                help="Mean average precision at 50% overlap — the standard single score for how well a detector finds and places defects." />
-              <MetricCard label="Precision" value={metrics.precision.toFixed(3)}
-                help="Of the defects it flagged, how many were real." />
-              <MetricCard label="Recall" value={metrics.recall.toFixed(3)}
-                help="Of the real defects present, how many it found." />
-              <MetricCard label="F1" value={metrics.f1.toFixed(3)}
-                help="The balance between precision and recall in one number." />
-            </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-muted">
-              Measured on {metrics.test_images} real test images, trained on{" "}
-              {metrics.train_images} real labelled images. Source: {metrics.source}.
-            </p>
+            {ckpt && (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <MetricCard label="mAP50" value={ckpt.mAP50.toFixed(3)}
+                    help="Mean average precision at 50% overlap — the standard single score for how well a detector finds and places defects." />
+                  <MetricCard label="Precision" value={ckpt.precision.toFixed(3)}
+                    help="Of the defects it flagged, how many were real." />
+                  <MetricCard label="Recall" value={ckpt.recall.toFixed(3)}
+                    help="Of the real defects present, how many it found." />
+                  <MetricCard label="F1" value={(ckpt.f1 ?? 0).toFixed(3)}
+                    help="The balance between precision and recall in one number." />
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                  Read from the loaded checkpoint itself
+                  {ckpt.train_epochs && ` (${ckpt.train_epochs} epochs at ${ckpt.train_imgsz}px)`}.
+                  {" "}{ckpt.note}
+                </p>
+              </>
+            )}
+            {metrics && (
+              <p className="mt-2 rounded-xl border border-hairline bg-black/[.02] p-2.5
+                            text-[11px] leading-relaxed text-muted">
+                For comparison, the notebook reports mAP50 {metrics.mAP50}, precision{" "}
+                {metrics.precision}, recall {metrics.recall}, F1 {metrics.f1} on{" "}
+                {metrics.test_images} real test images, trained on {metrics.train_images} real
+                labelled images. Source: {metrics.source}.
+              </p>
+            )}
+            {!running && (
+              <p className="mt-2 rounded-xl border border-accent/25 bg-accent/[.05] p-2.5
+                            text-[11px] leading-relaxed">
+                {det?.detail}
+              </p>
+            )}
           </>
         ) : (
           <EmptyState
@@ -73,9 +97,9 @@ export function Quality() {
         {shown.length === 0 ? (
           <EmptyState
             title="No detections"
-            body={detectorOn
+            body={running
               ? "Nothing has been detected yet this session. An empty list is not a claim that the line is defect-free."
-              : "With the detector unloaded, no detections are produced. Nothing is simulated in their place."}
+              : det?.detail ?? "The camera layer is not producing detections."}
           />
         ) : (
           <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">

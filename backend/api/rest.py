@@ -19,6 +19,10 @@ router = APIRouter()
 @router.get("/health", response_model=schemas.HealthResponse)
 def health():
     models = state.models_status()
+    metrics = dict(state.metrics)
+    # the running detector's own recorded numbers, straight from the artifact
+    if state.df.checkpoint_metrics:
+        metrics = {**metrics, "detector_checkpoint": state.df.checkpoint_metrics}
     return {
         "status": "ok",
         # bottleneck models are mandatory; the detector is reported separately so the
@@ -26,7 +30,7 @@ def health():
         "models_loaded": models["bottleneck"]["loaded"] and models["chains"]["loaded"],
         "models": models,
         "mode": state.settings.line["simulator"]["mode"],
-        "metrics": state.metrics,
+        "metrics": metrics,
         "provenance": state.provenance(),
         "playing": state.engine.playing,
         "tick_count": state.engine.tick_count,

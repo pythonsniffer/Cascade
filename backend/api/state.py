@@ -63,11 +63,16 @@ class AppState:
             f"records.",
         ]
         if self.df.yolo_loaded:
-            real.insert(0, (
-                f"Fine-tuned YOLOv8 defect detector - mAP50 {det_m.get('mAP50', 'n/a')}, "
-                f"precision {det_m.get('precision', 'n/a')}, recall {det_m.get('recall', 'n/a')}, "
-                f"F1 {det_m.get('f1', 'n/a')} on {det_m.get('test_images', 'n/a')} real test "
-                f"images, trained on {det_m.get('train_images', 'n/a')} real labelled images."))
+            line = (f"Fine-tuned YOLOv8 defect detector - mAP50 {det_m.get('mAP50', 'n/a')}, "
+                    f"precision {det_m.get('precision', 'n/a')}, recall "
+                    f"{det_m.get('recall', 'n/a')}, F1 {det_m.get('f1', 'n/a')} on "
+                    f"{det_m.get('test_images', 'n/a')} real test images, trained on "
+                    f"{det_m.get('train_images', 'n/a')} real labelled images. Loaded here and "
+                    f"verified as the fine-tuned detector, not a COCO model.")
+            if not self.df.sample_frames:
+                line += (" No camera frames are available in this instance, so it is not "
+                         "producing detections right now.")
+            real.insert(0, line)
         else:
             real.append(
                 "Defect detector NOT LOADED in this instance - the visual layer is off and "

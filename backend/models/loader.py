@@ -44,6 +44,7 @@ class DefectBundle:
     yolo_path: Path
     yolo_loaded: bool
     yolo_error: str | None
+    checkpoint_metrics: dict | None
     visual_classes: list[str]
     visual_to_process: dict
     camera_to_station: dict
@@ -110,7 +111,7 @@ def load_defect(settings: Settings) -> DefectBundle:
             raise ConfigError(f"{chains_path} missing column '{col}' required by predict_chain")
 
     yolo_path = settings.artifact(dcfg["yolo_weights"])
-    yolo, err = None, None
+    yolo, err, ckpt_metrics = None, None, None
     if not yolo_path.exists():
         err = (f"fine-tuned detector not present at {yolo_path}. The defect layer is OFF: no "
                f"detections are emitted. Drop in the exported best.pt to enable it.")
@@ -128,6 +129,7 @@ def load_defect(settings: Settings) -> DefectBundle:
                     f"({len(names)}) do not match the configured VISUAL_CLASSES "
                     f"({len(expected)}). Refusing to serve a COCO/foreign model as the "
                     f"defect detector. Got: {names[:6]}...")
+            ckpt_metrics = _read_checkpoint_metrics(yolo_path)
             log.info("loaded fine-tuned YOLO: %d classes from %s", len(names), yolo_path)
         except ConfigError:
             raise
@@ -142,10 +144,43 @@ def load_defect(settings: Settings) -> DefectBundle:
     ) if frames_dir.exists() else []
 
     return DefectBundle(yolo=yolo, yolo_path=yolo_path, yolo_loaded=yolo is not None,
-                        yolo_error=err, visual_classes=settings.visual_classes,
+                        yolo_error=err, checkpoint_metrics=ckpt_metrics,
+                        visual_classes=settings.visual_classes,
                         visual_to_process=settings.visual_to_process,
                         camera_to_station=settings.camera_to_station,
                         learned_chains=learned, sample_frames=sample_frames)
+
+
+def _read_checkpoint_metrics(path: Path) -> dict | None:
+    """Read the metrics ultralytics recorded inside the checkpoint itself.
+
+    These are the detector's own numbers, read from the artifact at load time rather
+    than typed into config — so what /health reports about the running detector always
+    comes from the running detector (Project Context §8.2).
+    """
+    try:
+        blob = torch.load(path, map_location="cpu", weights_only=False)
+    except Exception as e:                       # noqa: BLE001
+        log.warning("could not read metrics from %s: %s", path, e)
+        return None
+    raw = blob.get("train_metrics") or {}
+    key = {"metrics/mAP50(B)": "mAP50", "metrics/mAP50-95(B)": "mAP50_95",
+           "metrics/precision(B)": "precision", "metrics/recall(B)": "recall"}
+    out = {v: round(float(raw[k]), 4) for k, v in key.items() if k in raw}
+    if not out:
+        return None
+    p_, r_ = out.get("precision"), out.get("recall")
+    if p_ and r_:
+        out["f1"] = round(2 * p_ * r_ / (p_ + r_), 4)
+    args = blob.get("train_args") or {}
+    out["source"] = "checkpoint_train_metrics"
+    out["note"] = ("Recorded by ultralytics inside best.pt at its best epoch, read from the "
+                   "artifact at load time. Measured on the run's validation split, which is "
+                   "not necessarily the same split as the notebook's reported test figures.")
+    for f in ("imgsz", "epochs", "data"):
+        if f in args:
+            out[f"train_{f}"] = args[f]
+    return out
 
 
 def load_metrics(settings: Settings) -> dict:

@@ -165,7 +165,8 @@ function TickControls() {
 /* ── ProvenanceStrip — from /health, never a hardcoded string ── */
 function ProvenanceStrip() {
   const { health } = useTwin();
-  const detectorOff = health && !health.models.defect.detector_loaded;
+  const det = health?.models.defect;
+  const detectorOff = det && det.state !== "ready";
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-hairline
                     bg-black/[.02] px-5 py-1.5 text-[10.5px] leading-tight text-muted">
@@ -176,11 +177,8 @@ function ProvenanceStrip() {
       </span>
       {detectorOff && (
         <span className="pill border border-accent/25 bg-accent/[.07] text-accent">
-          Camera layer off
-          <Info term="Camera layer off">
-            The fine-tuned detector weights are not present in this instance, so no detections are
-            produced. Nothing is substituted for them.
-          </Info>
+          {det!.state === "no_frames" ? "Detector idle — no frames" : "Camera layer off"}
+          <Info term="Camera layer">{det!.detail}</Info>
         </span>
       )}
     </div>

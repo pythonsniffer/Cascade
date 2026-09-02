@@ -9,7 +9,7 @@ where tests/ runs offline in seconds.
 
 End-to-end UI test: navigation, station interaction, live WS, alerts, charts,
 config editing, error states, responsive behaviour."""
-import os, sys, tempfile, urllib.request
+import json, os, sys, tempfile, urllib.request
 from playwright.sync_api import sync_playwright
 
 # Playwright finds its own browser unless one is pinned here
@@ -113,8 +113,18 @@ with sync_playwright() as p:
     print("\n== quality honesty ==")
     page.get_by_role("link", name="Quality").click(); page.wait_for_timeout(1500)
     q = page.inner_text("body")
-    check("detector-off state is explicit", "not loaded" in q.lower())
-    check("detector metrics withheld when unloaded", "0.901" not in q)
+    det = json.loads(urllib.request.urlopen(API + "/health", timeout=20)
+                     .read())["models"]["defect"]
+    if det["state"] == "no_detector":
+        # metrics must be withheld: this instance cannot stand behind them
+        check("detector-off state is explicit", "not loaded" in q.lower())
+        check("detector metrics withheld when unloaded", "0.901" not in q)
+    else:
+        # detector present: its own checkpoint numbers may be shown, and if it has
+        # no frames the page must say so rather than implying it is inspecting.
+        check("loaded detector shows its recorded metrics", "mAP50" in q)
+        check("idle detector says why it is quiet",
+              det["state"] == "ready" or "no camera frames" in q.lower(), det["state"])
     page.screenshot(path=f"{SHOTS}/quality.png")
 
     print("\n== about page is API-driven ==")

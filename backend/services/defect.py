@@ -108,11 +108,28 @@ class DefectService:
         return pd.DataFrame(events)
 
     def status(self) -> dict:
+        """Report the layer's exact state. 'detector present but no frames to run it
+        on' is a different situation from 'no detector', and the UI must not
+        conflate them (Architecture §9)."""
+        if not self.bundle.yolo_loaded:
+            state, detail = "no_detector", (
+                "The fine-tuned detector weights are not loaded, so no detections are "
+                "produced. Nothing is shown in their place.")
+        elif not self.bundle.sample_frames:
+            state, detail = "no_frames", (
+                "The fine-tuned detector is loaded and verified, but there are no camera "
+                "frames for it to inspect. Detections appear once frames are supplied.")
+        else:
+            state, detail = "ready", "The fine-tuned detector is running on camera frames."
         return {
             "detector_loaded": self.bundle.yolo_loaded,
             "detector_path": str(self.bundle.yolo_path),
             "frames_available": len(self.bundle.sample_frames),
+            "frames_dir": str(self.settings.artifact(
+                self.settings.model["defect"].get("sample_images_dir", "sample_frames"))),
             "enabled": self.enabled,
+            "state": state,
+            "detail": detail,
             "error": self.bundle.yolo_error,
             "chain_rules": int(len(self.bundle.learned_chains)),
             "min_lift": self.settings.min_lift,

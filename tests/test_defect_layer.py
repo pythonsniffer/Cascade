@@ -136,3 +136,72 @@ def test_abstained_shift_yields_no_station(app_state):
     assert rec["bottleneck_station"] is None
     assert rec["bottleneck_zone"] is None
     assert rec["bottleneck_abstained"] is True
+
+
+def test_layer_state_distinguishes_no_detector_from_no_frames(app_state):
+    """A loaded detector with nothing to look at is not the same as no detector."""
+    st = app_state.engine.defect.status()
+    assert st["state"] in ("ready", "no_frames", "no_detector")
+    if st["detector_loaded"] and st["frames_available"] == 0:
+        assert st["state"] == "no_frames"
+        assert "no camera frames" in st["detail"].lower()
+        assert st["enabled"] is False
+    elif not st["detector_loaded"]:
+        assert st["state"] == "no_detector"
+
+
+def test_checkpoint_metrics_are_read_from_the_artifact(app_state):
+    """Never typed into config — read from best.pt itself, or absent."""
+    cm = app_state.df.checkpoint_metrics
+    if not app_state.df.yolo_loaded:
+        pytest.skip("no detector loaded in this instance")
+    assert cm is not None, "a loaded detector should expose its recorded metrics"
+    assert cm["source"] == "checkpoint_train_metrics"
+    assert 0 < cm["mAP50"] <= 1
+
+
+# ── the REAL detector, when one is present ───────────────────────────────
+def test_real_detector_inference_path(app_state, tmp_path):
+    """Drive the actual fine-tuned detector through detect() -> chain().
+
+    Uses an arbitrary photograph purely to exercise the inference path: whatever
+    the model outputs on an out-of-domain image is meaningless as a defect claim,
+    so this asserts only that events are WELL-FORMED, never what they contain.
+    This image is a test fixture and is never used as a demo frame.
+    """
+    from pathlib import Path as _P
+    import ultralytics
+
+    if not app_state.df.yolo_loaded:
+        pytest.skip("no detector loaded in this instance")
+    asset = _P(ultralytics.__file__).parent / "assets" / "bus.jpg"
+    if not asset.exists():
+        pytest.skip("no test image available")
+
+    svc = app_state.engine.defect
+    bundle = svc.bundle
+    saved = list(bundle.sample_frames)
+    bundle.sample_frames = [asset]
+    try:
+        events = svc.chain(svc.detect(
+            VehicleFrame(901, "cam_bodyshop_A", "2026-01-01T00:00:00Z", asset)))
+    finally:
+        bundle.sample_frames = saved
+
+    classes = set(app_state.settings.visual_classes)
+    for e in events:
+        assert e["source"] == "FINE_TUNED_YOLO"
+        assert e["defect_class"] in classes, "detector emitted a class outside VISUAL_CLASSES"
+        assert 0.0 <= e["confidence"] <= 1.0
+        assert len(e["bbox"]) == 4 and e["bbox"][2] >= e["bbox"][0]
+        assert e["station_id"] == app_state.settings.camera_to_station["cam_bodyshop_A"]
+        assert isinstance(e["chains"], list)
+
+
+def test_real_detector_is_not_coco(app_state):
+    """Context: the detector must never silently fall back to COCO."""
+    if not app_state.df.yolo_loaded:
+        pytest.skip("no detector loaded in this instance")
+    names = set(app_state.df.yolo.names.values())
+    assert names == set(app_state.settings.visual_classes)
+    assert "person" not in names and "car" not in names, "this is a COCO model"

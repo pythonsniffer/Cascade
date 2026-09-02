@@ -6,9 +6,11 @@ import { humanise, stationLabel, timeAgo } from "../lib/format";
 import type { ChainAlert } from "../lib/types";
 import { EmptyState, Info } from "./primitives";
 
-export function AlertRail({ alerts, detectorOn, onOpen }: {
+export function AlertRail({ alerts, detectorOn, detectorDetail, onOpen }: {
   alerts: ChainAlert[];
   detectorOn: boolean;
+  /** why the layer is quiet, straight from /health — never a guess */
+  detectorDetail?: string;
   onOpen: (vehicleId: number) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -49,11 +51,11 @@ export function AlertRail({ alerts, detectorOn, onOpen }: {
         >
           {alerts.length === 0 ? (
             <EmptyState
-              title={detectorOn ? "No alerts yet" : "Camera layer is off"}
+              title={detectorOn ? "No alerts yet" : "No alerts being produced"}
               tone={detectorOn ? "neutral" : "warn"}
               body={detectorOn
                 ? "Alerts appear here when the detector catches a defect that the chain engine links to a downstream one."
-                : "The fine-tuned detector weights are not loaded in this instance, so no detections and no chain alerts are produced. Nothing is shown in their place."}
+                : detectorDetail ?? "The camera layer is not producing detections."}
             />
           ) : (
             alerts.map((a, i) => (

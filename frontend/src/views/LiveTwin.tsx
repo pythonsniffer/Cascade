@@ -28,7 +28,7 @@ export function LiveTwin() {
     </div>;
   }
 
-  const detectorOn = !!health?.models.defect.detector_loaded;
+  const detectorOn = health?.models.defect.state === "ready";
   const warming = !bottleneck || bottleneck.confidence === "warming_up";
   const currency = pnl?.currency ?? "USD";
 
@@ -118,7 +118,8 @@ export function LiveTwin() {
         </div>
 
         {/* ── right: alerts ── */}
-        <AlertRail alerts={alerts} detectorOn={detectorOn} onOpen={selectVehicle} />
+        <AlertRail alerts={alerts} detectorOn={detectorOn}
+                   detectorDetail={health?.models.defect.detail} onOpen={selectVehicle} />
       </div>
 
       <div className="shrink-0">

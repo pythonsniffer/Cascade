@@ -58,11 +58,15 @@ export function About() {
             <MetricRow
               name="Defect detector (fine-tuned YOLOv8)"
               source={m.detector.source}
-              warn={!health.models.defect.detector_loaded}
+              warn={health.models.defect.state !== "ready"}
               detail={health.models.defect.detector_loaded
-                ? `mAP50 ${m.detector.mAP50}, precision ${m.detector.precision}, recall ${
-                    m.detector.recall}, F1 ${m.detector.f1} on ${m.detector.test_images} real test
-                    images, trained on ${m.detector.train_images} real labelled images.`
+                ? `Loaded here and verified as the fine-tuned detector by matching its class names
+                   against the configured list — a COCO model is refused. The checkpoint itself
+                   records ${m.detector_checkpoint
+                     ? `mAP50 ${m.detector_checkpoint.mAP50}, precision `
+                       + `${m.detector_checkpoint.precision}, recall ${m.detector_checkpoint.recall}`
+                     : "no metrics"}; the notebook separately reports mAP50 ${m.detector.mAP50} on
+                   ${m.detector.test_images} real test images. ${health.models.defect.detail}`
                 : `The detector weights are not loaded in this instance, so the camera layer is
                    off and produces no detections. Its published figures (mAP50 ${m.detector.mAP50}
                    on ${m.detector.test_images} test images) come from the notebook validation run
@@ -103,11 +107,7 @@ export function About() {
             {health.models.bottleneck.ensemble_size} models loaded from artifacts, window{" "}
             {health.models.bottleneck.T_w} shifts. {health.models.bottleneck.source}
           </Row>
-          <Row label="Detector">
-            {health.models.defect.detector_loaded
-              ? "Loaded and running"
-              : "Not loaded — camera layer off, no detections produced"}
-          </Row>
+          <Row label="Detector">{health.models.defect.detail}</Row>
           <Row label="Chain engine">
             {health.models.chains.rules} rules above lift {health.models.chains.min_lift}.{" "}
             {health.models.chains.note}

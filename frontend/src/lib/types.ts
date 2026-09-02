@@ -10,11 +10,16 @@ export interface Provenance {
   statement: string;
 }
 
+export type DetectorState = "ready" | "no_frames" | "no_detector";
+
 export interface DetectorStatus {
   detector_loaded: boolean;
   detector_path: string;
   frames_available: number;
+  frames_dir?: string;
   enabled: boolean;
+  state: DetectorState;
+  detail: string;
   error: string | null;
   chain_rules: number;
   min_lift: number;
@@ -56,6 +61,12 @@ export interface Metrics {
   chains?: {
     planted: number; recovered: number; recovered_pairs: string[];
     history_vehicles: number; history_records: number; source: string;
+  };
+  /** the running detector's own numbers, read from best.pt at load time */
+  detector_checkpoint?: {
+    mAP50: number; mAP50_95?: number; precision: number; recall: number; f1?: number;
+    source: string; note: string;
+    train_imgsz?: number; train_epochs?: number; train_data?: string;
   };
 }
 
