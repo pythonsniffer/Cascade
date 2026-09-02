@@ -65,17 +65,19 @@ line, alerts, defect chains, and P&L breakdown.
 ```
 
 **Key features and validated results.** Every metric below is the printed
-output of a specific notebook cell — nothing is estimated or hand-tuned:
+output of a specific notebook cell — nothing is estimated or hand-tuned. The
+defect detector was validated on 161 real test images spanning 20 classes from
+the MVTec-derived dataset:
 
-| Capability | Result | Source |
-|------------|--------|--------|
-| Defect detection (YOLOv8, fine-tuned) | mAP50 0.901, precision 0.891, recall 0.826, F1 0.857 | 161 real test images, 20 classes |
-| Training scale | 1,083 real labelled images (cable, screw, metal-nut, transistor) | MVTec-derived dataset |
-| Defect-chain recovery | 3/3 planted causal chains recovered (lift 1.36–1.53) | Cascade_DefectLayer |
-| Live defect-to-chain alerts | 8 of 21 detections raised a downstream-inspection flag | Cascade_DefectLayer |
-| Bottleneck forecast (BSTAN) | Test RMSE 2.80 ± 0.03 (beats persistence 3.44 and moving-avg 3.23) | Cascade_v3, 3-seed ablation |
-| Bottleneck localization | ~71% within ±2 stations (excluding edge-station cases) | Cascade_v3 |
-| Confidence gating | Abstains on ~63% of hard bottleneck shifts and 100% of anomaly aftermath | Cascade_v3 |
+| Capability | Result |
+|------------|--------|
+| Defect detection (YOLOv8, fine-tuned) | mAP50 0.901, precision 0.891, recall 0.826, F1 0.857 on 161 real test images across 20 classes |
+| Training scale | 1,083 real labelled images from the MVTec-derived dataset (cable, screw, metal-nut, transistor) |
+| Defect-chain recovery | 3/3 planted causal chains recovered (lift 1.36–1.53) |
+| Live defect-to-chain alerts | 8 of 21 detections raised a downstream-inspection flag |
+| Bottleneck forecast (BSTAN) | Test RMSE 2.80 ± 0.03 (beats persistence 3.44 and moving-avg 3.23) |
+| Bottleneck localization | ~71% within ±2 stations (excluding edge-station cases) |
+| Confidence gating | Abstains on ~63% of hard bottleneck shifts and 100% of anomaly aftermath |
 
 Additional implementation highlights:
 
@@ -176,7 +178,7 @@ The application is already deployed. To run a local instance:
    - API docs (Swagger): `http://localhost:8000/docs`
 
 To retrain models from scratch, open the source-of-truth notebooks
-(`Cascade_v3.ipynb`, `Cascade_Integrated_arpita.ipynb`) in Google Colab with a
+(`Cascade_Integrated.ipynb`) in Google Colab with a
 GPU runtime and run all cells. Exported artifacts (`.pt` weights, graph,
 normalization, chains) go into the `artifacts/` directory for the backend to
 load at startup — no retraining at deploy time.
@@ -351,4 +353,4 @@ acts autonomously on uncertain predictions.
 - Arpita
 - Parshv
 
-Team Cascade — IIT Roorkee
+Team teamName — IIT Roorkee
